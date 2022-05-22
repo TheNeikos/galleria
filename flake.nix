@@ -45,11 +45,33 @@
           inherit src;
         };
 
+        galleriaRuntimeDeps = with pkgs; [
+          xorg.libX11
+          xorg.libXcursor
+          xorg.libXrandr
+          xorg.libXi
+          libGL
+          libGLU
+        ];
+
         # Build the actual crate itself, reusing the dependency
         # artifacts from above.
         galleria = craneLib.buildPackage {
           inherit cargoArtifacts src;
         };
+
+        wrappedGalleria = pkgs.symlinkJoin {
+          name = "galleria";
+          paths = [ galleria ];
+
+          buildInputs = [ pkgs.makeWrapper ];
+
+          postBuild = ''
+            wrapProgram $out/bin/galleria \
+              --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath galleriaRuntimeDeps}"
+          '';
+        };
+
       in
       {
         checks = {
@@ -79,22 +101,16 @@
         };
 
         packages.galleria = galleria;
+        packages.wrapped = wrappedGalleria;
 
         apps.galleria = flake-utils.lib.mkApp {
-          drv = galleria;
+          drv = wrappedGalleria;
         };
 
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
 
-          buildInputs = with pkgs; [
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXrandr
-            xorg.libXi
-            libGL
-            libGLU
-          ];
+          buildInputs = with pkgs; [ ] ++ galleriaRuntimeDeps;
 
           # Extra inputs can be added here
           nativeBuildInputs = with pkgs; [
@@ -105,7 +121,7 @@
           ];
 
           shellHook = ''
-            export LD_LIBRARY_PATH=/run/opengl-driver/lib/:${lib.makeLibraryPath ([pkgs.libGL pkgs.libGLU])}
+            export LD_LIBRARY_PATH=/run/opengl-driver/lib/:${lib.makeLibraryPath galleriaRuntimeDeps}
           '';
         };
       });
