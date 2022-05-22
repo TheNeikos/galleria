@@ -87,11 +87,26 @@
         devShell = pkgs.mkShell {
           inputsFrom = builtins.attrValues self.checks;
 
+          buildInputs = with pkgs; [
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXrandr
+            xorg.libXi
+            libGL
+            libGLU
+          ];
+
           # Extra inputs can be added here
           nativeBuildInputs = with pkgs; [
             rustToolchain
             cargo-tarpaulin
+            cargo-edit
+            pkgconfig
           ];
+
+          shellHook = ''
+            export LD_LIBRARY_PATH=/run/opengl-driver/lib/:${lib.makeLibraryPath ([pkgs.libGL pkgs.libGLU])}
+          '';
         };
       });
 }

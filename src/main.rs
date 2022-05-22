@@ -1,23 +1,28 @@
 #[cfg(not(tarpaulin_include))]
 fn main() {
-    println!("Hello, world!");
+    tracing_subscriber::fmt::init();
+
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "Galleria",
+        native_options,
+        Box::new(|cc| Box::new(GalleriaApp::new(cc))),
+    );
 }
 
-fn this_function_is_not_tested(input: u32) {
-    if input == 2 {
-        println!("It's a two!");
-    } else {
-        println!("It's a {}", input);
+#[derive(Debug, Default)]
+struct GalleriaApp {}
+
+impl GalleriaApp {
+    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        Self::default()
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::this_function_is_not_tested;
-
-    #[test]
-    fn check_function() {
-        this_function_is_not_tested(123);
-        this_function_is_not_tested(2);
+impl eframe::App for GalleriaApp {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("Hello World!");
+        });
     }
 }
